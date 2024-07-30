@@ -19,8 +19,8 @@ class Vehicles extends StatefulWidget {
 
 class _VehiclesState extends State<Vehicles> {
   final List<Vehicle> vehicles = [
-    Vehicle('Car', 'ABC123', 'John Hunter', 'Honda Vezel 2015 '),
-    Vehicle('Van', 'XYZ789', 'Jane Smith', 'Details about Jane\'s van'),
+    Vehicle('Car', 'ABC123', 'Danindu Kalhara', 'Honda Vezel 2015 '),
+    Vehicle('Van', 'XYZ789', 'Sunera Range', 'Details about Jane\'s van'),
   ];
   late List<Vehicle> filteredVehicles;
   TextEditingController _searchController = TextEditingController();
@@ -125,34 +125,4 @@ class _VehiclesState extends State<Vehicles> {
     );
   }
 }
-
-// class DetailPage extends StatelessWidget {
-//   final Vehicle vehicle;
-//
-//   DetailPage({required this.vehicle});
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Vehicle Details'),
-//       ),
-//       body: Padding(
-//         padding: EdgeInsets.all(16.0),
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             Text('Type: ${vehicle.type}', style: TextStyle(fontSize: 18)),
-//             SizedBox(height: 8),
-//             Text('Number Plate: ${vehicle.numberPlate}', style: TextStyle(fontSize: 18)),
-//             SizedBox(height: 8),
-//             Text('Owner: ${vehicle.owner}', style: TextStyle(fontSize: 18)),
-//             SizedBox(height: 8),
-//             Text('Details: ${vehicle.details}', style: TextStyle(fontSize: 18)),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
 

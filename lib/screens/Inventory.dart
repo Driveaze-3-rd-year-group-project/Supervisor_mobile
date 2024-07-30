@@ -57,9 +57,10 @@ class _InventoryPageState extends State<InventoryPage> {
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none,
                 ),
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: Icon(Icons.search, color: Colors.black54),
                 contentPadding: EdgeInsets.symmetric(horizontal: 10),
               ),
+              style: TextStyle(color: Colors.black, fontSize: 14),
               onChanged: (value) {
                 setState(() {
                   filteredItems = inventoryItems

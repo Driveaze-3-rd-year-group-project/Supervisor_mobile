@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
+import 'package:get/get.dart';
 import 'vehicles.dart';
 
 class VehicleDetailPage extends StatefulWidget {
@@ -32,7 +33,7 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
     _detailsError = null;
     String? selectedTechnician;
 
-    List<String> technicians = ['John Doe', 'Jane Smith', 'Bob Johnson'];
+    List<String> technicians = ['Ruwan Pathirana', 'Mahesh Senanayake', 'Maleesha Wickramasinghe'];
 
     showDialog(
       context: context,
@@ -200,8 +201,26 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
                   final repair = repairHistory[index];
                   return ListTile(
                     title: Text(repair.details),
-                    subtitle: Text('Date: ${repair.date}\nTechnician: ${repair.technician}'),
-                  );
+                    subtitle: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(repair.date),
+                        Text(repair.technician),
+                      ],
+                    ),                  );
+                },
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.all(16.0),
+              child: ElevatedButton(
+                child: Text('Complete',style: TextStyle(color: Colors.white),),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF01103B),
+                  minimumSize: Size(double.infinity, 50),
+                ),
+                onPressed: () {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
                 },
               ),
             ),
@@ -227,12 +246,12 @@ class Repair {
 class RepairHistory {
   static final Map<String, List<Repair>> _repairHistory = {
     'ABC123': [
-      Repair('2023-01-10', 'Oil change', 'John Doe'),
-      Repair('2023-03-15', 'Brake replacement','John Doe' ),
+      Repair('2023-01-10', 'Oil change', 'Ruwan Pathirana'),
+      Repair('2023-03-15', 'Brake replacement','Mahesh Senanayake' ),
     ],
     'XYZ789': [
-      Repair('2023-02-20', 'Tire replacement', 'John Doe'),
-      Repair('2023-04-22', 'Battery replacement', 'John Doe'),
+      Repair('2023-02-20', 'Tire replacement', 'Mahesh Senanayake'),
+      Repair('2023-04-22', 'Battery replacement', 'Mahesh Senanayake'),
     ],
   };
 
