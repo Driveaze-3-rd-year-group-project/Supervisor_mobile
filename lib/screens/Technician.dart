@@ -54,9 +54,9 @@ class _TechnicianPageState extends State<TechnicianPage> {
   void _loadInitialTechnicians() {
     setState(() {
       technicians = [
-        Technician(employeeId: "T001", fullName: "Robin Greyson", phoneNumber: "1234567890", gender: "Male"),
-        Technician(employeeId: "T002", fullName: "Emma Stone", phoneNumber: "0987654321", gender: "Female"),
-        Technician(employeeId: "T003", fullName: "Alex Hale", phoneNumber: "5555555555", gender: "Male"),
+        Technician(employeeId: "T001", fullName: "Ruwan Pathirana", phoneNumber: "1234567890", gender: "Male"),
+        Technician(employeeId: "T002", fullName: "Mahesh Senanayake", phoneNumber: "0987654321", gender: "Female"),
+        Technician(employeeId: "T003", fullName: "Maleesha Wickramasinghe", phoneNumber: "5555555555", gender: "Male"),
       ];
     });
   }
