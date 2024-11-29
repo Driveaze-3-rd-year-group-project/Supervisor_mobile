@@ -1,16 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
-
 import 'vehicleDetails.dart';
-
-class Vehicle {
-  final String type;
-  final String numberPlate;
-  final String owner;
-  final String details;
-
-  Vehicle(this.type, this.numberPlate, this.owner, this.details);
-}
+import '../services/UserServices.dart';
+import '../models/models.dart';
 
 class Vehicles extends StatefulWidget {
   @override
@@ -18,11 +10,9 @@ class Vehicles extends StatefulWidget {
 }
 
 class _VehiclesState extends State<Vehicles> {
-  final List<Vehicle> vehicles = [
-    Vehicle('Car', 'ABC123', 'Danindu Kalhara', 'Honda Vezel 2015 '),
-    Vehicle('Van', 'XYZ789', 'Sunera Range', 'Details about Jane\'s van'),
-  ];
+  late List<Vehicle> vehicles = [];
   late List<Vehicle> filteredVehicles;
+  final SupervisorService _userService = SupervisorService();
   TextEditingController _searchController = TextEditingController();
 
   @override
@@ -32,6 +22,7 @@ class _VehiclesState extends State<Vehicles> {
     _searchController.addListener(() {
       filterVehicles(_searchController.text);
     });
+    fetchVehicles();
   }
 
   @override
@@ -42,21 +33,60 @@ class _VehiclesState extends State<Vehicles> {
 
   void filterVehicles(String query) {
     List<Vehicle> searchList = vehicles.where((vehicle) {
-      return vehicle.numberPlate.toLowerCase().contains(query.toLowerCase());
+      return vehicle.vehicleNo.toLowerCase().contains(query.toLowerCase());
     }).toList();
     setState(() {
       filteredVehicles = searchList;
     });
   }
 
-  Widget _getVehicleIcon(String type) {
-    switch (type) {
-      case 'Car':
-        return Icon(MaterialCommunityIcons.car_side);
-      case 'Van':
-        return Icon(MaterialCommunityIcons.van_passenger);
-      default:
-        return Icon(MaterialCommunityIcons.car_cog);
+  Future<void> fetchVehicles() async {
+    try{
+      final token = await _userService.getToken();
+      if (token == null) {
+        throw Exception('User  is not logged in.');
+      }
+
+      final response = await SupervisorService.getJobs(token);
+      print('Response from API: $response');
+
+      setState(() {
+        vehicles = (response as List).map<Vehicle>((data) {
+          var jobData = data[0];
+          var vehicleData = data[1];
+          var serviceDta = data[2];
+
+          Service service = Service(serviceDta['serviceId'], serviceDta['serviceName']);
+
+          Job job = Job(
+            jobData['jobId'],
+            jobData['vehicleId'],
+            jobData['startTime'],
+            jobData['supervisorId'],
+            jobData['serviceTypeId'],
+            jobData['vehicleMilage'],
+            jobData['startedDate'],
+            jobData['jobStatus'],
+            jobData['jobDescription'] ?? 'No description',
+          );
+
+          return Vehicle(
+            vehicleData['vehicleId'],
+            vehicleData['vehicleNo'] as String,
+            vehicleData['vehicleBrand'] as String,
+            vehicleData['vehicleModel'] as String,
+            jobData['startedDate'],
+            [job],
+            [service],
+
+          );
+        }).toList();
+        filteredVehicles = vehicles.where((vehicle) {
+          return vehicle.jobs.any((job) => job.jobStatus == 0);
+        }).toList();
+      });
+    } catch (e) {
+    print('Error fetching vehicles: $e');
     }
   }
 
@@ -65,7 +95,7 @@ class _VehiclesState extends State<Vehicles> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color(0xFF01103B),
-        title: Text('Vehicle List', style: TextStyle(color: Colors.white),),
+        title: Text('Vehicle List', style: TextStyle(color: Colors.white)),
       ),
       body: Column(
         children: [
@@ -101,12 +131,9 @@ class _VehiclesState extends State<Vehicles> {
                     side: BorderSide(color: Colors.white38, width: 2.0),
                   ),
                   child: ListTile(
-                    title: Text(vehicle.numberPlate, style: TextStyle(color: Colors.white70),),
-                    subtitle: Text(vehicle.owner, style: TextStyle(color: Colors.white70),),
-                    trailing: IconTheme(
-                      data: IconThemeData(color: Colors.white),
-                      child: _getVehicleIcon(vehicle.type),
-                    ),
+                    title: Text(vehicle.vehicleNo, style: TextStyle(color: Colors.white70)),
+                    subtitle: Text('${vehicle.brand} ${vehicle.model}', style: TextStyle(color: Colors.white70)),
+                    trailing: Text(vehicle.startDate, style: TextStyle(color: Colors.white70)),
                     onTap: () {
                       Navigator.push(
                         context,
@@ -125,4 +152,3 @@ class _VehiclesState extends State<Vehicles> {
     );
   }
 }
-

@@ -39,18 +39,24 @@ class SupervisorService {
     }
   }
 
-  Future<dynamic> addEntry(Map<String, dynamic> payload, String token) async {
+  static Future<List<dynamic>> getJobs(String token) async {
     try {
-      final response = await _dio.post(
-        '$BASE_URL/job-entry/save',
-        data: payload,
+      final response = await Dio().get(
+        '$BASE_URL/job-registry/get-jobs', // Replace with your actual jobs endpoint
         options: Options(
-          headers: {'Authorization': 'Bearer $token'},
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
         ),
       );
-      return response.data;
-    } catch (e) {
-      rethrow;
+      print(response);
+      return response.data['details']; // Adjust based on your response structure
+    } on DioError catch (e) {
+      throw Exception('Failed to fetch jobs: ${e.message}');
     }
+  }
+
+  Future<String?> getToken() async {
+    return await _secureStorage.read(key: 'token');
   }
 }
