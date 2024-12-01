@@ -108,6 +108,24 @@ class SupervisorService {
     }
   }
 
+  static Future<Response> addEntry(payload, String token) async {
+    try {
+      final response = await Dio().post(
+        '$BASE_URL/job-entry/save', // Replace with your actual jobs endpoint
+        data: payload,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+      print(response);
+      return response;
+    } on DioError catch (e) {
+      throw Exception('Failed to add job entry: ${e.message}');
+    }
+  }
+
   Future<String?> getToken() async {
     return await _secureStorage.read(key: 'token');
   }

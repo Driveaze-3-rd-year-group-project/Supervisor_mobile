@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../models/models.dart';
 import '../services/UserServices.dart'; // Ensure this path is correct
 
@@ -53,7 +54,7 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
       List<Repair> jobEntries = await RepairHistory.fetchJobEntries(jobId, token!);
       setState(() {
         repairHistory.addAll(jobEntries); // Add job entries to the repair history
-        repairHistory.sort((a, b) => a.details.compareTo(b.details)); // Sort by details or any other criteria
+        repairHistory.sort((a, b) => a.jobEntryId.compareTo(b.jobEntryId)); // Sort by details or any other criteria
       });
     } catch (error) {
       print(error);
@@ -65,7 +66,9 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
     manHoursController.clear();
     _detailsError = null;
     _manHoursError = null;
+    String? technicianError;
     int? selectedTechnician;
+    String? inventoryError;
 
     List<Map<String, dynamic>> selectedInventoryItems = []; // For inventory items
 
@@ -103,6 +106,18 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
                           border: OutlineInputBorder(),
                           errorText: _manHoursError,
                         ),
+                        onChanged: (value) {
+                          // Validate input to ensure it's an integer
+                          if (value.isNotEmpty && int.tryParse(value) == null) {
+                            setState(() {
+                              _manHoursError = 'Please enter a valid integer';
+                            });
+                          } else {
+                            setState(() {
+                              _manHoursError = null; // Clear error if valid
+                            });
+                          }
+                        },
                       ),
                       SizedBox(height: 8),
 
@@ -112,6 +127,7 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
                         decoration: InputDecoration(
                           labelText: 'Technician',
                           border: OutlineInputBorder(),
+                          errorText: technicianError,
                         ),
                         items: technicians.map((technician) {
                           return DropdownMenuItem<int>(
@@ -122,6 +138,7 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
                         onChanged: (int? newValue) {
                           setState(() {
                             selectedTechnician = newValue;
+                            technicianError = null;
                           });
                         },
                       ),
@@ -204,21 +221,81 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
                   child: Text('Cancel'),
                 ),
                 ElevatedButton.icon(
-                  onPressed: () {
+                  onPressed: () async {
                     final details = detailsController.text;
                     final manHours = manHoursController.text;
                     setState(() {
                       _detailsError = details.isEmpty ? 'Please enter repair details' : null;
                       _manHoursError = manHours.isEmpty ? 'Please enter man hours' : null;
+                      technicianError = selectedTechnician == null ? 'Please select a technician' : null;
+                      inventoryError = null;
                     });
-                    if (_detailsError == null && _manHoursError == null && selectedTechnician != null) {
-                      Repair newRepair = Repair(details, manHours, selectedTechnician!);
+
+
+
+
+                      if (_detailsError == null && _manHoursError == null && technicianError == null) {
+                        bool validity = true;
+                        for (var selectedItem in selectedInventoryItems) {
+                          for (var inventoryItem in inventoryItems) {
+                            if (selectedItem['id'] == inventoryItem['itemId']) {
+                              if (selectedItem['quantity'] > inventoryItem['count']) {
+                                validity = false;
+                                // Fluttertoast.showToast(
+                                //   msg:'Insufficient inventory items.',
+                                //   toastLength: Toast.LENGTH_SHORT,
+                                //   gravity: ToastGravity.TOP,
+                                //   backgroundColor: Colors.red,
+                                //   textColor: Colors.white,
+                                //   fontSize: 16.0,
+                                // );
+                                inventoryError = 'Quantity for ${inventoryItem['name']} exceeds available count';
+                                break;
+                              }
+                            }
+                          }
+                          if (!validity) break; // Exit loop if invalid
+                        }
+                        final now = DateTime.now();
+
+                        final payload = {
+                        'jobRegistry': widget.vehicle.jobs[0],
+                        'details': details,
+                        'manHours': manHours,
+                        'technicianId': selectedTechnician,
+                        'entryDate': now.toIso8601String().split('T')[0].toString(),
+                        'time': now.toIso8601String().split('T')[1].split('.')[0].toString(),
+                        'inventoryItemList': selectedInventoryItems.map((item) {
+                          return {
+                            'id': item['id'].toString(), // Convert to String if necessary
+                            'quantity': item['quantity'].toString(), // Convert to String if necessary
+                          };
+                        }).toList(),
+                        };
+                        print(payload);
+                        String? token = await SupervisorService().getToken();
+                        final res = await SupervisorService.addEntry(payload, token!);
+                        print(res);
+                        if (res.data['statusCode'] == 200) {
+                          Navigator.of(context).pop();
+                        }else{
+                          Fluttertoast.showToast(
+                            msg: res.data['message'] ?? 'An unknown error occurred.',
+                            toastLength: Toast.LENGTH_SHORT,
+                            gravity: ToastGravity.BOTTOM,
+                            backgroundColor: Colors.red,
+                            textColor: Colors.white,
+                            fontSize: 16.0,
+                          );
+                        }
+
+                      // Repair newRepair = Repair(0,details, manHours, selectedTechnician!);
                       // Add logic to handle inventory items if needed
-                      RepairHistory.addRepair(widget.vehicle.vehicleNo, newRepair);
-                      Navigator.of(dialogContext).pop();
-                      this.setState(() {
-                        // Update repair history if necessary
-                      });
+                      // RepairHistory.addRepair(widget.vehicle.vehicleNo, newRepair);
+                      // Navigator.of(dialogContext).pop();
+                      // this.setState(() {
+                      //   // Update repair history if necessary
+                      // });
                     }
                   },
                   icon: Icon(Icons.add),
@@ -332,7 +409,7 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
                     subtitle: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(repair.manHours),
+                        Text(repair.entryDate),
                       ],
                     ),
                   );
@@ -360,11 +437,15 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
 }
 
 class Repair {
+  final int jobEntryId;
+  final String entryDate;
+  final String time;
+  final int technicianId;
   final String details;
-  final String manHours;
-  final int technician;
+  final double manHours;
+  final String technician;
 
-  Repair(this.details, this.manHours, this.technician);
+  Repair(this.jobEntryId,this.entryDate,this.time,this.technicianId,this.details, this.manHours, this.technician);
 }
 
 class RepairHistory {
@@ -374,7 +455,7 @@ class RepairHistory {
   static List<Repair> getRepairs(String numberPlate) {
     if (_repairHistory.containsKey(numberPlate)) {
       List<Repair> repairs = List.from(_repairHistory[numberPlate]!);
-      repairs.sort((a, b) => b.details.compareTo(a.details)); // Sort by details or any other criteria
+      repairs.sort((a, b) => b.jobEntryId.compareTo(a.jobEntryId)); // Sort by details or any other criteria
       return repairs;
     } else {
       return [];
@@ -382,13 +463,13 @@ class RepairHistory {
   }
 
   // Method to add a repair for a specific vehicle number
-  static void addRepair(String numberPlate, Repair repair) {
-    if (_repairHistory.containsKey(numberPlate)) {
-      _repairHistory[numberPlate]!.add(repair);
-    } else {
-      _repairHistory[numberPlate] = [repair];
-    }
-  }
+  // static void addRepair(String numberPlate, Repair repair) {
+  //   if (_repairHistory.containsKey(numberPlate)) {
+  //     _repairHistory[numberPlate]!.add(repair);
+  //   } else {
+  //     _repairHistory[numberPlate] = [repair];
+  //   }
+  // }
 
   // Method to fetch job entries
   static Future<List<Repair>> fetchJobEntries(int jobId, String token) async {
@@ -403,13 +484,18 @@ class RepairHistory {
           var technicianName = entry[1]; // Technician name
 
           repairs.add(Repair(
+            jobEntry['jobEntryId'],
+            jobEntry['entryDate'],
+            jobEntry['time'],
+            jobEntry['technicianId'],
             jobEntry['details'],
-            jobEntry['entryDate'].toString(),
+            jobEntry['manHours'],
             technicianName,
+            // technicianName,
           ));
         }
 
-        repairs.sort((a, b) => a.details.compareTo(b.details)); // Sort by details or any other criteria
+        repairs.sort((a, b) => a.jobEntryId.compareTo(b.jobEntryId)); // Sort by details or any other criteria
         return repairs;
       } else {
         throw Exception('Invalid response format');

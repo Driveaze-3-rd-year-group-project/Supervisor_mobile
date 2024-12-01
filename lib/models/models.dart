@@ -10,6 +10,20 @@ class Job {
   final int jobStatus;
 
   Job(this.jobId, this.vehicleId, this.startTime, this.supervisorId, this.serviceTypeId, this.vehicleMilage, this.startedDate, this.jobStatus, this.jobDescription);
+
+  Map<String, dynamic> toJson() {
+    return {
+    'jobId':jobId,
+    'startedDate':startedDate,
+    'jobDescription':jobDescription,
+    'vehicleId':vehicleId,
+    'startTime':startTime,
+    'supervisorId':supervisorId,
+    'serviceTypeId':serviceTypeId,
+    'vehicleMilage':vehicleMilage,
+    'jobStatus':jobStatus
+    };
+  }
 }
 
 class Vehicle {
