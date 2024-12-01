@@ -56,6 +56,58 @@ class SupervisorService {
     }
   }
 
+  static Future<Response> getAllEntriesOfJob(int jobId, String token) async {
+    try {
+      final response = await Dio().get(
+        '$BASE_URL/job-entry/get-all-entries-of-job/$jobId',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+      // print(response);
+      // print(response.data);
+      return response;
+    } on DioError catch (e) {
+      throw Exception('Failed to fetch jobs: ${e.message}');
+    }
+  }
+
+  static Future<List<dynamic>> getAllInventory(String token) async {
+    try {
+      final response = await Dio().get(
+        '$BASE_URL/inventory/getAll', // Replace with your actual jobs endpoint
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+      // print(response);
+      return response.data['inventoryItemList'];
+    } on DioError catch (e) {
+      throw Exception('Failed to fetch jobs: ${e.message}');
+    }
+  }
+
+  static Future<List<dynamic>> getAllTechnician(String token) async {
+    try {
+      final response = await Dio().get(
+        '$BASE_URL/job-entry/get-technicians', // Replace with your actual jobs endpoint
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+      // print(response);
+      return response.data['ourUsersList'];
+    } on DioError catch (e) {
+      throw Exception('Failed to fetch jobs: ${e.message}');
+    }
+  }
+
   Future<String?> getToken() async {
     return await _secureStorage.read(key: 'token');
   }

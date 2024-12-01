@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
-import 'package:get/get.dart';
-import 'vehicles.dart';
+import '../models/models.dart';
+import '../services/UserServices.dart'; // Ensure this path is correct
 
 class VehicleDetailPage extends StatefulWidget {
   final Vehicle vehicle;
@@ -13,27 +13,61 @@ class VehicleDetailPage extends StatefulWidget {
 }
 
 class _VehicleDetailPageState extends State<VehicleDetailPage> {
-  late List<Repair> repairHistory;
+  late List<Repair> repairHistory = [];
   bool _isDetailsExpanded = false;
-  final TextEditingController dateController = TextEditingController();
   final TextEditingController detailsController = TextEditingController();
-  String? _dateError;
+  final TextEditingController manHoursController = TextEditingController();
   String? _detailsError;
+  String? _manHoursError;
+
+  List<dynamic> technicians = [];
+  List<dynamic> inventoryItems = [];
 
   @override
   void initState() {
     super.initState();
-    repairHistory = RepairHistory.getRepairs(widget.vehicle.numberPlate);
+    repairHistory = RepairHistory.getRepairs(widget.vehicle.vehicleNo);
+    _fetchJobEntries(widget.vehicle.jobs[0].jobId); // Fetch job entries
+    _fetchTechniciansAndInventory(); // Fetch technicians and inventory items
+  }
+
+  Future<void> _fetchTechniciansAndInventory() async {
+    String? token = await SupervisorService().getToken(); // Get the token
+    try {
+      List<dynamic> fetchedTechnicians = await SupervisorService.getAllTechnician(token!);
+      print(fetchedTechnicians);
+      List<dynamic> fetchedInventoryItems = await SupervisorService.getAllInventory(token);
+
+      setState(() {
+        technicians = fetchedTechnicians;
+        inventoryItems = fetchedInventoryItems;
+      });
+    } catch (error) {
+      print(error);
+    }
+  }
+
+  Future<void> _fetchJobEntries(int jobId) async {
+    String? token = await SupervisorService().getToken(); // Get the token
+    try {
+      List<Repair> jobEntries = await RepairHistory.fetchJobEntries(jobId, token!);
+      setState(() {
+        repairHistory.addAll(jobEntries); // Add job entries to the repair history
+        repairHistory.sort((a, b) => a.details.compareTo(b.details)); // Sort by details or any other criteria
+      });
+    } catch (error) {
+      print(error);
+    }
   }
 
   void _showAddRepairDialog() {
-    dateController.clear();
     detailsController.clear();
-    _dateError = null;
+    manHoursController.clear();
     _detailsError = null;
-    String? selectedTechnician;
+    _manHoursError = null;
+    int? selectedTechnician;
 
-    List<String> technicians = ['Ruwan Pathirana', 'Mahesh Senanayake', 'Maleesha Wickramasinghe'];
+    List<Map<String, dynamic>> selectedInventoryItems = []; // For inventory items
 
     showDialog(
       context: context,
@@ -42,65 +76,124 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
           builder: (BuildContext context, StateSetter setState) {
             return AlertDialog(
               title: Text('Add Repair'),
-              content: SizedBox(
-                width: MediaQuery.of(context).size.width * 0.99,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: dateController,
-                      decoration: InputDecoration(
-                        labelText: 'Repair Date',
-                        border: OutlineInputBorder(),
-                        suffixIcon: Icon(Ionicons.calendar_sharp),
-                        errorText: _dateError,
+              content: SingleChildScrollView(
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.8,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Details Field
+                      TextField(
+                        controller: detailsController,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          labelText: 'Repair Details',
+                          border: OutlineInputBorder(),
+                          errorText: _detailsError,
+                        ),
                       ),
-                      readOnly: true,
-                      onTap: () async {
-                        DateTime? pickedDate = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2101),
-                        );
-                        if (pickedDate != null) {
+                      SizedBox(height: 8),
+
+                      // Man Hours Field
+                      TextField(
+                        controller: manHoursController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'Man Hours',
+                          border: OutlineInputBorder(),
+                          errorText: _manHoursError,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+
+                      // Technician Dropdown
+                      DropdownButtonFormField<int>(
+                        value: selectedTechnician,
+                        decoration: InputDecoration(
+                          labelText: 'Technician',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: technicians.map((technician) {
+                          return DropdownMenuItem<int>(
+                            value: technician['id'],
+                            child: Text(technician['name']),
+                          );
+                        }).toList(),
+                        onChanged: (int? newValue) {
                           setState(() {
-                            dateController.text = pickedDate.toLocal().toString().split(' ')[0];
-                            _dateError = null;
+                            selectedTechnician = newValue;
                           });
-                        }
-                      },
-                    ),
-                    SizedBox(height: 8),
-                    TextField(
-                      controller: detailsController,
-                      maxLines: 5,
-                      decoration: InputDecoration(
-                        labelText: 'Repair Details',
-                        border: OutlineInputBorder(),
-                        errorText: _detailsError,
+                        },
                       ),
-                    ),
-                    SizedBox(height: 8),
-                    DropdownButtonFormField<String>(
-                      value: selectedTechnician,
-                      decoration: InputDecoration(
-                        labelText: 'Technician',
-                        border: OutlineInputBorder(),
+                      SizedBox(height: 20),
+
+                      // Inventory Items Section
+                      Text('Used Inventory Items', style: TextStyle(fontSize: 18)),
+                      SizedBox(height: 8),
+                      Column(
+                        children: selectedInventoryItems.map((item) {
+                          return Row(
+                            children: [
+                          Expanded(
+                          child: DropdownButtonFormField<int>(
+                            value: item['id'],
+                            decoration: InputDecoration(
+                                border: OutlineInputBorder(),
+                            hintText: 'Select Item',
+                            contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                          ),
+                          items: inventoryItems.map((inventoryItem) {
+                            return DropdownMenuItem<int>(
+                              value: inventoryItem['itemId'], // Assuming 'itemId' is the field you want to use
+                              child: Text(inventoryItem['name']),
+                            );
+                          }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                item['id'] = value;
+                              });
+                            },
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          SizedBox(
+                            width: 60,
+                            child: TextField(
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(),
+                                hintText: 'Qty',
+                                contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                              ),
+                              onChanged: (value) {
+                                setState(() {
+                                  item['quantity'] = int.tryParse(value) ?? 0;
+                                });
+                              },
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.remove),
+                            onPressed: () {
+                              setState(() {
+                                selectedInventoryItems.remove(item);
+                              });
+                            },
+                          ),
+                          ],
+                          );
+                        }).toList(),
                       ),
-                      items: technicians.map((String technician) {
-                        return DropdownMenuItem<String>(
-                          value: technician,
-                          child: Text(technician),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedTechnician = newValue;
-                        });
-                      },
-                    ),
-                  ],
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            selectedInventoryItems.add({'id': null, 'quantity': 0});
+                          });
+                        },
+                        child: Text('Add Inventory Item'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               actions: [
@@ -112,18 +205,19 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
                 ),
                 ElevatedButton.icon(
                   onPressed: () {
-                    final date = dateController.text;
                     final details = detailsController.text;
+                    final manHours = manHoursController.text;
                     setState(() {
-                      _dateError = date.isEmpty ? 'Please select a date' : null;
                       _detailsError = details.isEmpty ? 'Please enter repair details' : null;
+                      _manHoursError = manHours.isEmpty ? 'Please enter man hours' : null;
                     });
-                    if (_dateError == null && _detailsError == null && selectedTechnician != null) {
-                      Repair newRepair = Repair(date, details, selectedTechnician!);
-                      RepairHistory.addRepair(widget.vehicle.numberPlate, newRepair);
+                    if (_detailsError == null && _manHoursError == null && selectedTechnician != null) {
+                      Repair newRepair = Repair(details, manHours, selectedTechnician!);
+                      // Add logic to handle inventory items if needed
+                      RepairHistory.addRepair(widget.vehicle.vehicleNo, newRepair);
                       Navigator.of(dialogContext).pop();
                       this.setState(() {
-                        repairHistory = RepairHistory.getRepairs(widget.vehicle.numberPlate);
+                        // Update repair history if necessary
                       });
                     }
                   },
@@ -138,6 +232,16 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
     );
   }
 
+  String getJobStatus(int status) {
+    switch (status) {
+      case 0:
+        return 'Ongoing';
+      case 1:
+        return 'Completed';
+      default:
+        return 'Unknown';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -148,7 +252,7 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         backgroundColor: Color(0xFF01103B),
-        title: Text('Update Repairs', style: TextStyle(color: Colors.white),),
+        title: Text('Update Repairs', style: TextStyle(color: Colors.white)),
       ),
       body: Padding(
         padding: EdgeInsets.all(16.0),
@@ -158,7 +262,7 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Vehicle Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text('Job Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 IconButton(
                   icon: Icon(_isDetailsExpanded ? Ionicons.caret_up : Ionicons.caret_down),
                   onPressed: () {
@@ -173,19 +277,22 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
             ),
             if (_isDetailsExpanded) ...[
               SizedBox(height: 8),
-              Text('Type: ${widget.vehicle.type}', style: TextStyle(fontSize: 18)),
+              Text('Vehicle No: ${widget.vehicle.vehicleNo}', style: TextStyle(fontSize: 16)),
               SizedBox(height: 8),
-              Text('Number Plate: ${widget.vehicle.numberPlate}', style: TextStyle(fontSize: 18)),
+              Text('Vehicle Model: ${widget.vehicle.brand + " " + widget.vehicle.model}', style: TextStyle(fontSize: 16)),
               SizedBox(height: 8),
-              Text('Owner: ${widget.vehicle.owner}', style: TextStyle(fontSize: 18)),
+              Text('Job Started Date: ${widget.vehicle.jobs[0].startedDate}', style: TextStyle(fontSize: 16)),
               SizedBox(height: 8),
-              Text('Model: ${widget.vehicle.details}', style: TextStyle(fontSize: 18)),
+              Text('Service Type: ${widget.vehicle.service[0].serviceName}', style: TextStyle(fontSize: 16)),
+              SizedBox(height: 8),
+              Text('Status: ${getJobStatus (widget.vehicle.jobs[0].jobStatus)}', style: TextStyle(fontSize: 16)),
+              SizedBox(height: 8),
             ],
             SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Repair History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text('Repair Updates', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 IconButton(
                   icon: Icon(Icons.add_box_rounded),
                   alignment: Alignment.center,
@@ -201,20 +308,41 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
                   final repair = repairHistory[index];
                   return ListTile(
                     title: Text(repair.details),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.remove_red_eye_rounded),
+                          alignment: Alignment.center,
+                          onPressed: _showAddRepairDialog,
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.edit),
+                          alignment: Alignment.center,
+                          onPressed: _showAddRepairDialog,
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.delete),
+                          alignment: Alignment.center,
+                          onPressed: _showAddRepairDialog,
+                        ),
+                      ],
+                    ),
                     subtitle: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(repair.date),
-                        Text(repair.technician),
+                        Text(repair.manHours),
                       ],
-                    ),                  );
+                    ),
+                  );
                 },
               ),
             ),
             Padding(
               padding: EdgeInsets.all(16.0),
               child: ElevatedButton(
-                child: Text('Complete',style: TextStyle(color: Colors.white),),
+                child: Text('Complete', style: TextStyle(color: Colors.white)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFF01103B),
                   minimumSize: Size(double.infinity, 50),
@@ -231,40 +359,29 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
   }
 }
 
-
-
-
-
 class Repair {
-  final String date;
   final String details;
-  final String technician;
+  final String manHours;
+  final int technician;
 
-  Repair(this.date, this.details, this.technician);
+  Repair(this.details, this.manHours, this.technician);
 }
 
 class RepairHistory {
-  static final Map<String, List<Repair>> _repairHistory = {
-    'ABC123': [
-      Repair('2023-01-10', 'Oil change', 'Ruwan Pathirana'),
-      Repair('2023-03-15', 'Brake replacement','Mahesh Senanayake' ),
-    ],
-    'XYZ789': [
-      Repair('2023-02-20', 'Tire replacement', 'Mahesh Senanayake'),
-      Repair('2023-04-22', 'Battery replacement', 'Mahesh Senanayake'),
-    ],
-  };
+  static final Map<String, List<Repair>> _repairHistory = {};
 
+  // Method to get repairs for a specific vehicle number
   static List<Repair> getRepairs(String numberPlate) {
     if (_repairHistory.containsKey(numberPlate)) {
       List<Repair> repairs = List.from(_repairHistory[numberPlate]!);
-      repairs.sort((a, b) => b.date.compareTo(a.date));
+      repairs.sort((a, b) => b.details.compareTo(a.details)); // Sort by details or any other criteria
       return repairs;
     } else {
       return [];
     }
   }
 
+  // Method to add a repair for a specific vehicle number
   static void addRepair(String numberPlate, Repair repair) {
     if (_repairHistory.containsKey(numberPlate)) {
       _repairHistory[numberPlate]!.add(repair);
@@ -272,5 +389,33 @@ class RepairHistory {
       _repairHistory[numberPlate] = [repair];
     }
   }
-}
 
+  // Method to fetch job entries
+  static Future<List<Repair>> fetchJobEntries(int jobId, String token) async {
+    try {
+      final response = await SupervisorService.getAllEntriesOfJob(jobId, token);
+
+      if (response.data['statusCode'] == 200) {
+        List<Repair> repairs = [];
+
+        for (var entry in response.data['details']) {
+          var jobEntry = entry[0]; // Job entry details
+          var technicianName = entry[1]; // Technician name
+
+          repairs.add(Repair(
+            jobEntry['details'],
+            jobEntry['entryDate'].toString(),
+            technicianName,
+          ));
+        }
+
+        repairs.sort((a, b) => a.details.compareTo(b.details)); // Sort by details or any other criteria
+        return repairs;
+      } else {
+        throw Exception('Invalid response format');
+      }
+    } catch (e) {
+      throw Exception('Failed to fetch job entries: $e');
+    }
+  }
+}
