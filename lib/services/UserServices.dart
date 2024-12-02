@@ -126,7 +126,43 @@ class SupervisorService {
     }
   }
 
+  static Future<Response> deleteEntry(int jobEntryId, String token) async {
+    try {
+      final response = await Dio().delete(
+        '$BASE_URL/job-entry/delete/$jobEntryId',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      return response;
+    } on DioError catch (e) {
+      throw Exception('Failed to delete job entry: ${e.message}');
+    }
+  }
+
+  static Future<Response> completeJob(int jobId,payload, String token) async {
+    try {
+      final response = await Dio().put(
+        '$BASE_URL/job-registry/update/$jobId', // Replace with your actual jobs endpoint
+        data: payload,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+      print(response);
+      return response;
+    } on DioError catch (e) {
+      throw Exception('Failed to complete job: ${e.message}');
+    }
+  }
+
   Future<String?> getToken() async {
     return await _secureStorage.read(key: 'token');
   }
+
 }

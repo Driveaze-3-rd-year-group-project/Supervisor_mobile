@@ -277,12 +277,25 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
                         final res = await SupervisorService.addEntry(payload, token!);
                         print(res);
                         if (res.data['statusCode'] == 200) {
+
+                          Fluttertoast.showToast(
+                            msg: "Repair entry added successfully!",
+                            toastLength: Toast.LENGTH_SHORT,
+                            gravity: ToastGravity.TOP,
+                            backgroundColor: Colors.green,
+                            textColor: Colors.white,
+                            fontSize: 16.0,
+                          );
+                          setState(() {
+                            repairHistory.clear(); // Clear the list
+                          });
+                          await _fetchJobEntries(widget.vehicle.jobs[0].jobId);
                           Navigator.of(context).pop();
                         }else{
                           Fluttertoast.showToast(
                             msg: res.data['message'] ?? 'An unknown error occurred.',
                             toastLength: Toast.LENGTH_SHORT,
-                            gravity: ToastGravity.BOTTOM,
+                            gravity: ToastGravity.TOP,
                             backgroundColor: Colors.red,
                             textColor: Colors.white,
                             fontSize: 16.0,
@@ -304,6 +317,157 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
               ],
             );
           },
+        );
+      },
+    );
+  }
+
+  void _showDeleteConfirmationDialog(int jobEntryId) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text('Delete Repair Entry'),
+          content: Text('Are you sure you want to delete this repair entry?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(); // Close the dialog
+              },
+              child: Text('No'),
+            ),
+            TextButton(
+              onPressed: () async {
+                // Call the method to delete the repair entry
+                String? token = await SupervisorService().getToken();
+                final res = await SupervisorService.deleteEntry(jobEntryId, token!);
+                if(res.data['statusCode']==200){
+                  setState(() {
+                    repairHistory.clear(); // Clear the list
+                  });
+                  await _fetchJobEntries(widget.vehicle.jobs[0].jobId);
+
+                  Fluttertoast.showToast(
+                    msg: 'Entry delete Successful!!.',
+                    toastLength: Toast.LENGTH_SHORT,
+                    gravity: ToastGravity.TOP,
+                    backgroundColor: Colors.green,
+                    textColor: Colors.white,
+                    fontSize: 16.0,
+                  );
+                  Navigator.of(dialogContext).pop();
+                }else{
+                  Fluttertoast.showToast(
+                    msg: res.data['message'] ?? 'An unknown error occurred.',
+                    toastLength: Toast.LENGTH_SHORT,
+                    gravity: ToastGravity.TOP,
+                    backgroundColor: Colors.red,
+                    textColor: Colors.white,
+                    fontSize: 16.0,
+                  );
+                }
+              },
+              child: Text('Yes'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showEntryDetailsDialog(Repair repair) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Repair Entry Details'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Entry Id: ${repair.jobEntryId}', style: TextStyle(fontSize: 16)),
+                SizedBox(height: 8),
+                Text('Entry Date: ${repair.entryDate}', style: TextStyle(fontSize: 16)),
+                SizedBox(height: 8),
+                Text('Time: ${repair.time}', style: TextStyle(fontSize: 16)),
+                SizedBox(height: 8),
+                Text('Technician Name: ${repair.technician}', style: TextStyle(fontSize: 16)),
+                SizedBox(height: 8),
+                Text('Details: ${repair.details}', style: TextStyle(fontSize: 16)),
+                SizedBox(height: 8),
+                Text('Man Hours: ${repair.manHours}', style: TextStyle(fontSize: 16)),
+                // Add more fields as necessary
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Close'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showJobCompleteConfirmationDialog(Vehicle vehicle) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Complete Job'),
+          content: Text('Are you sure you want to mark this job as completed?'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+            TextButton(
+              child: Text('Confirm'),
+              onPressed: () async {
+
+                final now = DateTime.now();
+
+                Map<String, dynamic> payload = {
+                  'jobId': vehicle.jobs[0].jobId,
+                  'vehicleId': vehicle.jobs[0].vehicleId,
+                  'startedDate': vehicle.jobs[0].startedDate,
+                  'startTime': vehicle.jobs[0].startTime,
+                  'finishedDate': now.toIso8601String().split('T')[0].toString(),
+                  'supervisorId': vehicle.jobs[0].supervisorId,
+                  'serviceTypeId': vehicle.jobs[0].serviceTypeId,
+                  'vehicleMilage': vehicle.jobs[0].vehicleMilage,
+                  'jobStatus': 1,
+                  'jobDescription': vehicle.jobs[0].jobDescription,
+                };
+
+
+                String? token = await SupervisorService().getToken();
+                final res = await SupervisorService.completeJob(vehicle.jobs[0].jobId, payload,token!);
+
+                if(res.data['statusCode']==200){
+                  Navigator.of(context).pop();
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                }else{
+                  Fluttertoast.showToast(
+                    msg: res.data['message'] ?? 'An unknown error occurred.',
+                    toastLength: Toast.LENGTH_SHORT,
+                    gravity: ToastGravity.TOP,
+                    backgroundColor: Colors.red,
+                    textColor: Colors.white,
+                    fontSize: 16.0,
+                  );
+                }
+
+                // Close the dialog
+
+              },
+            ),
+          ],
         );
       },
     );
@@ -392,7 +556,9 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
                         IconButton(
                           icon: Icon(Icons.remove_red_eye_rounded),
                           alignment: Alignment.center,
-                          onPressed: _showAddRepairDialog,
+                          onPressed: () {
+                            _showEntryDetailsDialog(repair);
+                          }
                         ),
                         IconButton(
                           icon: Icon(Icons.edit),
@@ -402,7 +568,9 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
                         IconButton(
                           icon: Icon(Icons.delete),
                           alignment: Alignment.center,
-                          onPressed: _showAddRepairDialog,
+                          onPressed:() {
+                            _showDeleteConfirmationDialog(repair.jobEntryId);
+                          }
                         ),
                       ],
                     ),
@@ -425,7 +593,8 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
                   minimumSize: Size(double.infinity, 50),
                 ),
                 onPressed: () {
-                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  _showJobCompleteConfirmationDialog(widget.vehicle);
+
                 },
               ),
             ),
@@ -462,14 +631,6 @@ class RepairHistory {
     }
   }
 
-  // Method to add a repair for a specific vehicle number
-  // static void addRepair(String numberPlate, Repair repair) {
-  //   if (_repairHistory.containsKey(numberPlate)) {
-  //     _repairHistory[numberPlate]!.add(repair);
-  //   } else {
-  //     _repairHistory[numberPlate] = [repair];
-  //   }
-  // }
 
   // Method to fetch job entries
   static Future<List<Repair>> fetchJobEntries(int jobId, String token) async {
