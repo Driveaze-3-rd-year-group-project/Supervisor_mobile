@@ -42,7 +42,7 @@ class _DashboardState extends State<Dashboard> {
         backgroundColor: Color(0xFF01103B),
         title: Center(
           child: Image.asset(
-            'assets/3.png',
+            'assets/1.png',
             height: 300,
           ),
         ),

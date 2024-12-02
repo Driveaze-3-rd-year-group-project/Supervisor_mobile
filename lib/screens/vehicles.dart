@@ -55,6 +55,8 @@ class _VehiclesState extends State<Vehicles> {
           var jobData = data[0];
           var vehicleData = data[1];
           var serviceDta = data[2];
+          var modelData = data[3];
+          var brandData = data[4];
 
           Service service = Service(serviceDta['serviceId'], serviceDta['serviceName']);
 
@@ -73,8 +75,8 @@ class _VehiclesState extends State<Vehicles> {
           return Vehicle(
             vehicleData['vehicleId'],
             vehicleData['vehicleNo'] as String,
-            vehicleData['vehicleBrand'] as String,
-            vehicleData['vehicleModel'] as String,
+            brandData['brandName'] as String,
+            modelData['modelName'] as String,
             jobData['startedDate'],
             [job],
             [service],
@@ -95,7 +97,7 @@ class _VehiclesState extends State<Vehicles> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color(0xFF01103B),
-        title: Text('Vehicle List', style: TextStyle(color: Colors.white)),
+        title: Text('Ongoing Repairs', style: TextStyle(color: Colors.white)),
       ),
       body: Column(
         children: [

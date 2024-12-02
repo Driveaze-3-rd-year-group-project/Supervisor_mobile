@@ -36,11 +36,11 @@ class MainScreen extends StatelessWidget {
                 ),
                 NavigationDestination(
                   icon: Icon(Ionicons.car_outline),
-                  label: 'Vehicles',
+                  label: 'Ongoing Jobs',
                 ),
                 NavigationDestination(
                   icon: Icon(Feather.tool),
-                  label: 'Inventory',
+                  label: 'Completed',
                 ),
                 NavigationDestination(
                   icon: Icon(MaterialIcons.handyman),

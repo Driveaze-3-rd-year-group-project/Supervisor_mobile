@@ -473,6 +473,162 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
     );
   }
 
+  void _showEditRepairDialog(Repair repair) {
+    // Create TextEditingControllers and initialize them with the current values
+    TextEditingController detailsController = TextEditingController(text: repair.details);
+    TextEditingController manHoursController = TextEditingController(text: repair.manHours.toString());
+
+    String? _detailsError;
+    String? _manHoursError;
+    String? technicianError;
+    int? selectedTechnician = repair.technicianId; // Assuming technicianId is part of the Repair model
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: Text('Edit Repair'),
+              content: SingleChildScrollView(
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.8,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Details Field
+                      TextField(
+                        controller: detailsController,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          labelText: 'Repair Details',
+                          border: OutlineInputBorder(),
+                          errorText: _detailsError,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+
+                      // Man Hours Field
+                      TextField(
+                        controller: manHoursController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'Man Hours',
+                          border: OutlineInputBorder(),
+                          errorText: _manHoursError,
+                        ),
+                        onChanged: (value) {
+                          // Validate input to ensure it's an integer
+                          if (value.isNotEmpty && int.tryParse(value) == null) {
+                            setState(() {
+                              _manHoursError = 'Please enter a valid integer';
+                            });
+                          } else {
+                            setState(() {
+                              _manHoursError = null; // Clear error if valid
+                            });
+                          }
+                        },
+                      ),
+                      SizedBox(height: 8),
+
+                      // Technician Dropdown
+                      DropdownButtonFormField<int>(
+                        value: selectedTechnician,
+                        decoration: InputDecoration(
+                          labelText: 'Technician',
+                          border: OutlineInputBorder(),
+                          errorText: technicianError,
+                        ),
+                        items: technicians.map((technician) {
+                          return DropdownMenuItem<int>(
+                            value: technician['id'],
+                            child: Text(technician['name']),
+                          );
+                        }).toList(),
+                        onChanged: (int? newValue) {
+                          setState(() {
+                            selectedTechnician = newValue;
+                            technicianError = null; // Clear error on selection
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Cancel'),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    final details = detailsController.text;
+                    final manHours = manHoursController.text;
+
+                    // Validate inputs
+                    setState(() {
+                      _detailsError = details.isEmpty ? 'Please enter repair details' : null;
+                      _manHoursError = manHours.isEmpty ? 'Please enter man hours' : null;
+                      technicianError = selectedTechnician == null ? 'Please select a technician' : null;
+                    });
+
+                    if (_detailsError == null && _manHoursError == null && technicianError == null) {
+                      // Create the payload for the update
+                      final payload = {
+                        'repairId': repair.jobEntryId,
+                        'jobRegistry': widget.vehicle.jobs[0],
+                        'details': details,
+                        'manHours': manHours,
+                        'technicianId': selectedTechnician,
+                        'entryDate': repair.entryDate,
+                        'time': repair.time,
+                      };
+
+                      // Call your service to update the repair
+                      String? token = await SupervisorService().getToken();
+                      final res = await SupervisorService.updateEntry(repair.jobEntryId,payload, token!); // Assuming you have an update method
+
+                      if (res.data['statusCode'] == 200) {
+                        setState(() {
+                          repairHistory.clear(); // Clear the list
+                        });
+                        await _fetchJobEntries(widget.vehicle.jobs[0].jobId);
+                        Fluttertoast.showToast(
+                          msg: "Repair entry updated successfully!!",
+                          toastLength: Toast.LENGTH_SHORT,
+                          gravity: ToastGravity.TOP,
+                          backgroundColor: Colors.green,
+                          textColor: Colors.white,
+                          fontSize: 16.0,
+                        );
+                        Navigator.of(context).pop(); // Close the dialog
+                      } else {
+                        Fluttertoast.showToast(
+                          msg: res.data['message'] ?? 'An unknown error occurred.',
+                          toastLength: Toast.LENGTH_SHORT,
+                          gravity: ToastGravity.TOP,
+                          backgroundColor: Colors.red,
+                          textColor: Colors.white,
+                          fontSize: 16.0,
+                        );
+                      }
+                    }
+                  },
+                  icon: Icon(Icons.edit),
+                  label: Text('Update Repair'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   String getJobStatus(int status) {
     switch (status) {
       case 0:
@@ -563,7 +719,9 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
                         IconButton(
                           icon: Icon(Icons.edit),
                           alignment: Alignment.center,
-                          onPressed: _showAddRepairDialog,
+                          onPressed:() {
+                            _showEditRepairDialog(repair);
+                          }
                         ),
                         IconButton(
                           icon: Icon(Icons.delete),
