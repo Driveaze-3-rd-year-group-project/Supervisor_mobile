@@ -15,11 +15,11 @@ class InventoryPage extends StatefulWidget {
 
 class _InventoryPageState extends State<InventoryPage> {
   List<InventoryItem> inventoryItems = [
-    InventoryItem(name: "Screwdriver", count: 50, initialCount: 100),
-    InventoryItem(name: "Hammer", count: 30, initialCount: 50),
-    InventoryItem(name: "Wrench Set", count: 15, initialCount: 20),
-    InventoryItem(name: "Paint Brush", count: 75, initialCount: 100),
-    InventoryItem(name: "Safety Goggles", count: 40, initialCount: 60),
+    InventoryItem(name: "Air Filters", count: 50, initialCount: 100),
+    InventoryItem(name: "Break Pad", count: 30, initialCount: 50),
+    InventoryItem(name: "Radiator Grille", count: 15, initialCount: 20),
+    InventoryItem(name: "Air Vents", count: 75, initialCount: 100),
+    InventoryItem(name: "Break Oil Cans", count: 40, initialCount: 60),
   ];
 
   List<InventoryItem> filteredItems = [];
@@ -81,12 +81,7 @@ class _InventoryPageState extends State<InventoryPage> {
                       filteredItems[index].count = newCount;
                     });
                   },
-                  onDelete: () {
-                    setState(() {
-                      inventoryItems.remove(filteredItems[index]);
-                      filteredItems.removeAt(index);
-                    });
-                  },
+                  onDelete: () => _deleteItem(filteredItems[index]),
                   onEdit: () => _showEditItemDialog(filteredItems[index]),
                 );
               },
@@ -188,6 +183,15 @@ class _InventoryPageState extends State<InventoryPage> {
         );
       },
     );
+  }
+
+  void _deleteItem(InventoryItem item) {
+    setState(() {
+      inventoryItems.removeWhere((i) => i.name == item.name);
+      filteredItems = List.from(inventoryItems.where((i) =>
+          i.name.toLowerCase().contains(searchController.text.toLowerCase())
+      ));
+    });
   }
 
   void _showEditItemDialog(InventoryItem item) {

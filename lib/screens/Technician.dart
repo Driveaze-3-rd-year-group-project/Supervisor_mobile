@@ -63,7 +63,8 @@ class _TechnicianPageState extends State<TechnicianPage> {
 
   void filterTechnicians(String query) {
     List<Technician> searchList = technicians.where((technician) {
-      return technician.fullName.toLowerCase().contains(query.toLowerCase());
+      return technician.fullName.toLowerCase().contains(query.toLowerCase()) ||
+          technician.employeeId.toLowerCase().contains(query.toLowerCase());
     }).toList();
     setState(() {
       filteredTechnicians = searchList;
@@ -270,12 +271,15 @@ class _TechnicianPageState extends State<TechnicianPage> {
                       Navigator.of(dialogContext).pop();
                       setState(() {
                         if (isEditing && editIndex != null) {
-                          technicians[technicians.indexWhere((t) => t.employeeId == filteredTechnicians[editIndex].employeeId)] = technician;
+                          int mainIndex = technicians.indexWhere((t) => t.employeeId == filteredTechnicians[editIndex].employeeId);
+                          if (mainIndex != -1) {
+                            technicians[mainIndex] = technician;
+                          }
                           filteredTechnicians[editIndex] = technician;
                         } else {
                           technicians.add(technician);
-                          filteredTechnicians.add(technician);
                         }
+                        filterTechnicians(_searchController.text); // Reapply the filter
                       });
                       _resetForm();
                     }
@@ -293,9 +297,9 @@ class _TechnicianPageState extends State<TechnicianPage> {
 
   void _deleteTechnician(int index) {
     setState(() {
-      Technician technicianToRemove = filteredTechnicians[index];
-      technicians.removeWhere((t) => t.employeeId == technicianToRemove.employeeId);
-      filteredTechnicians.removeAt(index);
+      String idToRemove = filteredTechnicians[index].employeeId;
+      technicians.removeWhere((t) => t.employeeId == idToRemove);
+      filterTechnicians(_searchController.text);
     });
   }
 

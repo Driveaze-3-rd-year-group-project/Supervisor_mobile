@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
+import 'CompletedJobDetails.dart';
 import 'vehicleDetails.dart';
 import '../services/UserServices.dart';
 import '../models/models.dart';
 
-class Vehicles extends StatefulWidget {
+class Completedjobs extends StatefulWidget {
   @override
-  State<Vehicles> createState() => _VehiclesState();
+  State<Completedjobs> createState() => _CompletedjobsState();
 }
 
-class _VehiclesState extends State<Vehicles> {
+class _CompletedjobsState extends State<Completedjobs> {
   late List<Vehicle> vehicles = [];
   late List<Vehicle> filteredVehicles;
   final SupervisorService _userService = SupervisorService();
@@ -84,11 +85,11 @@ class _VehiclesState extends State<Vehicles> {
           );
         }).toList();
         filteredVehicles = vehicles.where((vehicle) {
-          return vehicle.jobs.any((job) => job.jobStatus == 0);
+          return vehicle.jobs.any((job) => job.jobStatus == 1);
         }).toList();
       });
     } catch (e) {
-    print('Error fetching vehicles: $e');
+      print('Error fetching vehicles: $e');
     }
   }
 
@@ -97,7 +98,7 @@ class _VehiclesState extends State<Vehicles> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color(0xFF01103B),
-        title: Text('Ongoing Repairs', style: TextStyle(color: Colors.white)),
+        title: Text('Completed Repairs', style: TextStyle(color: Colors.white)),
       ),
       body: Column(
         children: [
@@ -126,7 +127,7 @@ class _VehiclesState extends State<Vehicles> {
               itemBuilder: (context, index) {
                 final vehicle = filteredVehicles[index];
                 return Card(
-                  color: Color(0xFF01103B),
+                  color: Color(0xFF03304C),
                   margin: EdgeInsets.all(10.0),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10.0),
@@ -140,7 +141,7 @@ class _VehiclesState extends State<Vehicles> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => VehicleDetailPage(vehicle: vehicle),
+                          builder: (context) => CompletedJobDetails(vehicle: vehicle),
                         ),
                       );
                     },

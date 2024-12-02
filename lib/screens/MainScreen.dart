@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 
+import 'CompletedJobs.dart';
 import 'Dash.dart';
 import 'Inventory.dart';
 import 'Profile.dart';
@@ -36,11 +37,11 @@ class MainScreen extends StatelessWidget {
                 ),
                 NavigationDestination(
                   icon: Icon(Ionicons.car_outline),
-                  label: 'Vehicles',
+                  label: 'Ongoing Jobs',
                 ),
                 NavigationDestination(
                   icon: Icon(Feather.tool),
-                  label: 'Inventory',
+                  label: 'Completed',
                 ),
                 NavigationDestination(
                   icon: Icon(MaterialIcons.handyman),
@@ -65,7 +66,7 @@ class NavigationController extends GetxController {
   final List<Widget> screens = [
     Dashboard(),
     Vehicles(),
-    InventoryPage(),
+    Completedjobs(),
     TechnicianPage(),
     ProfilePage(),
   ];

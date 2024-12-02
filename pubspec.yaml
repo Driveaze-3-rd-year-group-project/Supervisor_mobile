@@ -30,6 +30,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  dio: ^5.3.2
+  flutter_secure_storage: ^9.0.0
+  fluttertoast: ^8.2.8
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -74,6 +77,7 @@ flutter:
      - assets/2.jpg
      - assets/3.png
      - assets/user.png
+     - assets/1.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
