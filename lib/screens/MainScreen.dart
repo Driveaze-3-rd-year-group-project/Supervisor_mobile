@@ -43,10 +43,10 @@ class MainScreen extends StatelessWidget {
                   icon: Icon(Feather.tool),
                   label: 'Completed',
                 ),
-                NavigationDestination(
-                  icon: Icon(MaterialIcons.handyman),
-                  label: 'Technician',
-                ),
+                // NavigationDestination(
+                //   icon: Icon(MaterialIcons.handyman),
+                //   label: 'Technician',
+                // ),
                 NavigationDestination(
                   icon: Icon(Feather.user),
                   label: 'Profile',
@@ -67,7 +67,7 @@ class NavigationController extends GetxController {
     Dashboard(),
     Vehicles(),
     Completedjobs(),
-    TechnicianPage(),
+    // TechnicianPage(),
     ProfilePage(),
   ];
   void changeIndex(int index) {
