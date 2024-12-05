@@ -129,7 +129,7 @@ class ProfileCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Bellamy Blake',
+                        'Supervisor',
                         style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                       ),
                       SizedBox(height: 2),
@@ -169,7 +169,7 @@ class ProfileCard extends StatelessWidget {
             ListTile(
               leading: Icon(Icons.email, color: Color(0xFF3F51B5)),
               title: Text('Email'),
-              subtitle: Text('blakeb@gmail.com'),
+              subtitle: Text('supervisor@123.com'),
             ),
             ListTile(
               leading: Icon(Icons.phone, color: Color(0xFF3F51B5)),

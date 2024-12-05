@@ -23,6 +23,10 @@ class SupervisorService {
         await _secureStorage.write(key: 'role', value: userData['role']);
 
         print(userData['token']);
+        print(userData['role']);
+        if (userData['role'] != 'SUPERVISOR'){
+          throw Exception('Invalid User!!');
+        }
         return userData;
       }else{
         throw Exception(response.data['message']);
