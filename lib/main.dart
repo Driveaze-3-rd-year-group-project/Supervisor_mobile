@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:device_preview/device_preview.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
-
-import 'screens/second.dart';
-import 'screens/home.dart';
 import 'screens/login.dart';
 import 'screens/vehicles.dart';
 import 'screens/dashboard.dart';

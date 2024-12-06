@@ -1,6 +1,5 @@
 import 'package:Samarasinghe/screens/Technician.dart';
 import 'package:Samarasinghe/screens/dashboard.dart';
-import 'package:Samarasinghe/screens/home.dart';
 import 'package:Samarasinghe/screens/vehicles.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
